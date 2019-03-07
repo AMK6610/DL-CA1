@@ -15,75 +15,38 @@ class Network:
                  num_epochs,
                  learning_rate,
                  ):
-
         self.num_nodes_in_layers = num_nodes_in_layers
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weights = []
-
-        # build the network
-        #         w1/b1    w2/b2   
-        # 784(inputs) ---> 20 ---> 10(output)
-        #         x     z1  a1  z2  a2=y
         for i in range(len(self.num_nodes_in_layers) - 1):
             self.weights.append(np.random.randn(self.num_nodes_in_layers[i], self.num_nodes_in_layers[i + 1]) * 0.1)
-            # self.weights.append(np.random.randn(self.num_nodes_in_layers[1], self.num_nodes_in_layers[2]) * 0.1)
-        # self.weight1 = np.random.randn(self.num_nodes_in_layers[0], self.num_nodes_in_layers[1]) * 0.1
-        # self.bias1 = np.zeros((1, self.num_nodes_in_layers[1]))
-        # self.weight2 = np.random.randn(self.num_nodes_in_layers[1], self.num_nodes_in_layers[2]) * 0.1
-        # self.bias2 = np.zeros((1, self.num_nodes_in_layers[2]))
         self.loss = []
 
     def train(self, inputs, labels):
-
-        for epoch in range(self.num_epochs):  # training begin
+        for epoch in range(self.num_epochs):
             iteration = 0
             while iteration < len(inputs):
-                # batch input
                 inputs_batch = inputs[iteration:iteration + self.batch_size]
                 labels_batch = labels[iteration:iteration + self.batch_size]
-
-                # # forward pass
-                # z1 = np.dot(inputs_batch, self.weights[0])
-                # a1 = function.relu(z1)
-                # z2 = np.dot(a1, self.weights[1])
-                # y = function.softmax(z2)
-                outputs = []
-                network_input = inputs_batch
-                outputs.append(np.array(inputs_batch))
-                # print('network_input :', network_input.shape)
-                for i in range(len(self.num_nodes_in_layers) - 1):
-                    outputs.append(function.relu(np.dot(network_input, self.weights[i])))
-                    network_input = outputs[-1]
-                #
-                #     # z2 = np.dot(a1, self.weights[1])
-                #     # y = function.softmax(z2)
+                outputs = self.forward(inputs_batch)
                 y = outputs[-1]
 
-                # calculate loss
                 loss, delta = function.svm_loss(self.weights[-1], outputs[-2], labels_batch)
                 # loss = function.cross_entropy(y, labels_batch)
                 # loss += function.L2_regularization(0.01, self.weights[0], self.weights[1])#lambda
                 self.loss.append(loss)
                 labels_batch = np.eye(num_classes)[labels_batch]
-                # backward pass
-                # delta_y = (y - labels_batch) / y.shape[0]
-                # delta_y = grad
-                # print(delta_y.shape, a1.shape)
-
                 delta_y = []
                 w_gradient = []
                 delta_y.append(delta)
                 for i in range(len(self.num_nodes_in_layers) - 2, -1, -1):
                     delta_y.append(np.dot(delta_y[-1], self.weights[i].T))
                     index = i
-                    # print(index, outputs[1].shape)
-                    # print(len(outputs[index]), delta_y[-1].shape)
                     (delta_y[-1])[outputs[index] <= 0] = 0
                     w_gradient.append(np.dot(outputs[index].T, delta_y[-2]))
                     self.weights[index] -= self.learning_rate * w_gradient[-1]
-
 
                 # delta_hidden_layer = np.dot(delta_y, self.weights[1].T)
                 # delta_hidden_layer[outputs[1] <= 0] = 0  # derivatives of relu
@@ -110,15 +73,16 @@ class Network:
             pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
         '''
 
-    def test(self, inputs, labels):
+    def forward(self, inputs):
         outputs = []
         network_input = inputs
+        outputs.append(inputs)
         for i in range(len(self.num_nodes_in_layers) - 1):
             outputs.append(function.relu(np.dot(network_input, self.weights[i])))
             network_input = outputs[-1]
-        # input_layer = np.dot(inputs, self.weights[0])
-        # hidden_layer = function.relu(input_layer)
-        # scores = np.dot(hidden_layer, self.weights[1])
-        # probs = function.softmax(scores)
+        return outputs
+
+    def test(self, inputs, labels):
+        outputs = self.forward(inputs)
         acc = float(np.sum(np.argmax(outputs[-1], 1) == labels)) / float(len(labels))
         print('Test accuracy: {:.2f}%'.format(acc * 100))
