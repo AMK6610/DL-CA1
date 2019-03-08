@@ -17,7 +17,7 @@ X_test = test_images.reshape(test_images.shape[0], test_images.shape[1]*test_ima
 x_test = X_test / 255 #normalization
 y_test = test_labels
 
-with open('weights.pkl', 'rb') as handle:
+with open('weights_82_20ep.pkl', 'rb') as handle:
     b = pickle.load(handle)
 
 weight1 = b[0]
